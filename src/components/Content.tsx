@@ -1,3 +1,6 @@
+import { useMemo } from 'react';
+import { CellMeasurer, CellMeasurerCache, CellRenderer, createMasonryCellPositioner, Masonry } from 'react-virtualized'
+
 import { MovieCard } from "./MovieCard";
 
 interface ContentProps {
@@ -20,6 +23,39 @@ interface ContentProps {
 }
 
 export function Content({ selectedGenre, movies }: ContentProps) {
+  const cache = useMemo(() => {
+    return new CellMeasurerCache({
+      defaultHeight: 0,
+      defaultWidth: 250,
+      fixedWidth: true,
+    });
+  }, [])
+
+  const cellPositioner = useMemo(() => {
+    return createMasonryCellPositioner({
+      cellMeasurerCache: cache,
+      columnCount: 3,
+      columnWidth: 250,
+      spacer: 50,
+    });
+  }, [])
+
+  const cellRenderer: CellRenderer = ({ index, key, parent, style }) => {
+    return (
+      <CellMeasurer key={key} index={index} cache={cache} parent={parent}>
+        <div style={style}>
+          <MovieCard
+            key={movies[index].imdbID}
+            title={movies[index].Title}
+            poster={movies[index].Poster}
+            runtime={movies[index].Runtime}
+            rating={movies[index].Ratings[0].Value}
+          />
+        </div>
+      </CellMeasurer>
+    )
+  }
+
   return (
     <div className="container">
       <header>
@@ -28,9 +64,17 @@ export function Content({ selectedGenre, movies }: ContentProps) {
 
       <main>
         <div className="movies-list">
-          {movies.map(movie => (
-            <MovieCard key={movie.imdbID} title={movie.Title} poster={movie.Poster} runtime={movie.Runtime} rating={movie.Ratings[0].Value} />
-          ))}
+
+          <Masonry
+            cellCount={movies.length}
+            cellMeasurerCache={cache}
+            cellPositioner={cellPositioner}
+            cellRenderer={cellRenderer}
+            height={900}
+            width={900}
+            autoHeight
+          />
+
         </div>
       </main>
     </div>
